@@ -10,6 +10,31 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', './views');
 
+// Function to refresh access token
+const refreshAccessToken = async () => {
+    try {
+        const response = await axios.post('https://accounts.zoho.com/oauth/v2/token', null, {
+            params: {
+                refresh_token: process.env.ZOHO_REFRESH_TOKEN,
+                client_id: process.env.ZOHO_CLIENT_ID,
+                client_secret: process.env.ZOHO_CLIENT_SECRET,
+                grant_type: 'refresh_token'
+            }
+        });
+
+        const newAccessToken = response.data.access_token;
+        console.log('New Access Token:', newAccessToken);
+
+        // Update the environment variable or use the new access token as needed
+        process.env.ZOHO_ACCESS_TOKEN = newAccessToken;
+
+        return newAccessToken;
+    } catch (error) {
+        console.error('Error refreshing access token:', error.message);
+        throw error;
+    }
+};
+
 // Middleware to check login and variable teller
 const checkLogin = async (req, res, next) => {
     const { email, password } = req.body;
@@ -20,7 +45,8 @@ const checkLogin = async (req, res, next) => {
                 criteria: `(Email:equals:${email}) and (Password:equals:${password})`
             },
             headers: {
-                'Authorization': `Zoho-oauthtoken ${process.env.ZOHO_ACCESS_TOKEN}`
+                'Authorization': `Zoho-oauthtoken ${process.env.ZOHO_ACCESS_TOKEN}`,
+                'Content-Type': 'application/json'
             }
         });
 
@@ -42,6 +68,17 @@ const checkLogin = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('Error during login:', error.message);
+
+        // Check if the error is due to an expired token and refresh it
+        if (error.response && error.response.status === 401) {
+            try {
+                await refreshAccessToken();
+                return checkLogin(req, res, next); // Retry the login check with the new token
+            } catch (refreshError) {
+                return res.status(500).send('Internal Server Error');
+            }
+        }
+
         return res.status(500).send('Internal Server Error');
     }
 };
