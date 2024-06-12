@@ -41,6 +41,11 @@ const checkLogin = async (req, res, next) => {
     }
 };
 
+// Root route to serve a login form
+app.get('/', (req, res) => {
+    res.render('login');
+});
+
 // Login endpoint
 app.post('/login', checkLogin, (req, res) => {
     const { Email, First_Name, Last_Name, Company_Name } = req.user;
@@ -51,6 +56,27 @@ app.post('/login', checkLogin, (req, res) => {
         achternaam: Last_Name,
         bedrijfsnaam: Company_Name
     });
+});
+
+// Serve form (EJS Template)
+app.get('/form', (req, res) => {
+    res.render('form', {
+        email: '',
+        voornaam: '',
+        achternaam: '',
+        bedrijfsnaam: ''
+    });
+});
+
+app.post('/submit', (req, res) => {
+    // Handle form submission
+    const formData = req.body;
+    console.log('Form Data:', formData);
+
+    // Update Zoho CRM record if necessary
+    // ...
+
+    res.send('Form submitted successfully!');
 });
 
 app.listen(port, () => {
