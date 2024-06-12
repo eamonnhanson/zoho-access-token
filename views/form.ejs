@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form</title>
+</head>
+<body>
+    <h2>Welcome, <%= voornaam %> <%= achternaam %></h2>
+    <p>Company: <%= bedrijfsnaam %></p>
+    <p>Email: <%= email %></p>
+
+    <form action="/submit" method="post">
+        <!-- Your form fields here -->
+        <input type="hidden" name="email" value="<%= email %>">
+        <input type="hidden" name="voornaam" value="<%= voornaam %>">
+        <input type="hidden" name="achternaam" value="<%= achternaam %>">
+        <input type="hidden" name="bedrijfsnaam" value="<%= bedrijfsnaam %>">
+        <!-- Add other form fields here -->
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
