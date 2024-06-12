@@ -40,6 +40,8 @@ const checkLogin = async (req, res, next) => {
     const { email, password } = req.body;
 
     try {
+        console.log('Attempting to authenticate user:', email);
+
         const response = await axios.get('https://www.zohoapis.com/crm/v2/Example/search', {
             params: {
                 criteria: `(Email:equals:${email}) and (Password:equals:${password})`
@@ -51,16 +53,19 @@ const checkLogin = async (req, res, next) => {
         });
 
         if (response.data.data.length === 0) {
+            console.log('No matching user found.');
             return res.status(401).send('Unauthorized');
         }
 
         const user = response.data.data[0];
 
         if (!user) {
+            console.log('User object is empty.');
             return res.status(401).send('Unauthorized');
         }
 
         if (user.teller && user.teller >= 6) {
+            console.log('Submission limit reached for user.');
             return res.status(403).send('Form submission limit reached');
         }
 
@@ -72,13 +77,16 @@ const checkLogin = async (req, res, next) => {
         // Check if the error is due to an expired token and refresh it
         if (error.response && error.response.status === 401) {
             try {
+                console.log('Access token expired. Refreshing token...');
                 await refreshAccessToken();
                 return checkLogin(req, res, next); // Retry the login check with the new token
             } catch (refreshError) {
+                console.error('Error refreshing access token:', refreshError.message);
                 return res.status(500).send('Internal Server Error');
             }
         }
 
+        console.error('Unhandled error:', error.message);
         return res.status(500).send('Internal Server Error');
     }
 };
