@@ -15,13 +15,18 @@ const checkLogin = async (req, res, next) => {
     const { email, password } = req.body;
 
     try {
-        const response = await axios.post('https://www.zohoapis.com/crm/v2/Example/search', {
-            criteria: `((Email:equals:${email}) and (Password:equals:${password}))`
-        }, {
+        const response = await axios.get('https://www.zohoapis.com/crm/v2/Example/search', {
+            params: {
+                criteria: `(Email:equals:${email}) and (Password:equals:${password})`
+            },
             headers: {
                 'Authorization': `Zoho-oauthtoken ${process.env.ZOHO_ACCESS_TOKEN}`
             }
         });
+
+        if (response.data.data.length === 0) {
+            return res.status(401).send('Unauthorized');
+        }
 
         const user = response.data.data[0];
 
@@ -36,7 +41,7 @@ const checkLogin = async (req, res, next) => {
         req.user = user;
         next();
     } catch (error) {
-        console.error(error);
+        console.error('Error during login:', error.message);
         return res.status(500).send('Internal Server Error');
     }
 };
