@@ -30,7 +30,7 @@ const refreshAccessToken = async () => {
 
         return newAccessToken;
     } catch (error) {
-        console.error('Error refreshing access token:', error.message);
+        console.error('Error refreshing access token:', error.message, error.response ? error.response.data : '');
         throw error;
     }
 };
@@ -75,7 +75,7 @@ const checkLogin = async (req, res, next) => {
         req.user = user;
         next();
     } catch (error) {
-        console.error('Error during login:', error.message);
+        console.error('Error during login:', error.message, error.response ? error.response.data : '');
 
         // Check if the error is due to an expired token and refresh it
         if (error.response && error.response.status === 401) {
@@ -84,12 +84,12 @@ const checkLogin = async (req, res, next) => {
                 await refreshAccessToken();
                 return checkLogin(req, res, next); // Retry the login check with the new token
             } catch (refreshError) {
-                console.error('Error refreshing access token:', refreshError.message);
+                console.error('Error refreshing access token:', refreshError.message, refreshError.response ? refreshError.response.data : '');
                 return res.status(500).send('Internal Server Error');
             }
         }
 
-        console.error('Unhandled error:', error.message);
+        console.error('Unhandled error:', error.message, error.response ? error.response.data : '');
         return res.status(500).send('Internal Server Error');
     }
 };
