@@ -4,6 +4,13 @@ const axios = require('axios');
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Set view engine to ejs
+app.set('view engine', 'ejs');
+app.set('views', './views');
+
 // In-memory cache for the access token
 let cachedAccessToken = process.env.ZOHO_ACCESS_TOKEN;
 
