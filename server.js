@@ -41,6 +41,7 @@ const checkLogin = async (req, res, next) => {
 
     try {
         console.log('Attempting to authenticate user:', email);
+        console.log('Using access token:', process.env.ZOHO_ACCESS_TOKEN);
 
         const response = await axios.get('https://www.zohoapis.com/crm/v2/Example/search', {
             params: {
@@ -51,6 +52,8 @@ const checkLogin = async (req, res, next) => {
                 'Content-Type': 'application/json'
             }
         });
+
+        console.log('Zoho CRM API Response:', response.data);
 
         if (response.data.data.length === 0) {
             console.log('No matching user found.');
