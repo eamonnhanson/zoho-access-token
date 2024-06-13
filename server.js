@@ -43,6 +43,11 @@ app.post('/fetch-achternaam', async (req, res) => {
     }
 });
 
+// Default route for health check
+app.get('/', (req, res) => {
+    res.send('Zoho CRM API integration is running');
+});
+
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
