@@ -1,7 +1,8 @@
 const express = require('express');
-const axios = require('axios'); // Replacing node-fetch with axios
+const axios = require('axios');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
+const cors = require('cors');
 
 dotenv.config();
 
@@ -10,6 +11,7 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
+app.use(cors()); // Enable CORS for all routes
 
 app.post('/fetch-achternaam', async (req, res) => {
     const email = req.body.email;
