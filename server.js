@@ -1,5 +1,5 @@
 const express = require('express');
-const fetch = require('node-fetch');
+const axios = require('axios'); // Replacing node-fetch with axios
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 
@@ -23,19 +23,14 @@ app.post('/fetch-achternaam', async (req, res) => {
     const url = `https://www.zohoapis.eu/crm/v2/Example/search?criteria=${encodeURIComponent(criteria)}`;
 
     try {
-        const response = await fetch(url, {
-            method: 'GET',
+        const response = await axios.get(url, {
             headers: {
                 'Authorization': `Zoho-oauthtoken ${accessToken}`,
                 'Content-Type': 'application/json'
             }
         });
 
-        if (!response.ok) {
-            throw new Error(`Error fetching data: ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        const data = response.data;
         res.json(data);
     } catch (error) {
         console.error('Error fetching Bedrijf:', error);
