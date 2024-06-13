@@ -1,45 +1,48 @@
 const express = require('express');
+const fetch = require('node-fetch');
 const bodyParser = require('body-parser');
-const axios = require('axios');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Middleware
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-// Endpoint to fetch Achternaam from Zoho CRM
 app.post('/fetch-achternaam', async (req, res) => {
-    const { email } = req.body;
-    const accessToken = '1000.ccea1aac8d55c749b178a67a425b5411.e327f06b86e6675f136796dd27f8dfef';
+    const email = req.body.email;
+    const accessToken = process.env.ZOHO_ACCESS_TOKEN; // Access token from environment variable
+
+    if (!accessToken) {
+        return res.status(500).json({ error: 'Access token not configured' });
+    }
+
+    const criteria = `(Email:equals:${email})`;
+    const url = `https://www.zohoapis.eu/crm/v2/Example/search?criteria=${encodeURIComponent(criteria)}`;
 
     try {
-        const response = await axios.get('https://www.zohoapis.com/crm/v2/Example/search', {
-            params: {
-                criteria: `(Email:equals:${email})`
-            },
+        const response = await fetch(url, {
+            method: 'GET',
             headers: {
                 'Authorization': `Zoho-oauthtoken ${accessToken}`,
                 'Content-Type': 'application/json'
             }
         });
 
-        if (response.data.data.length === 0) {
-            return res.json({ achternaam: null });
+        if (!response.ok) {
+            throw new Error(`Error fetching data: ${response.statusText}`);
         }
 
-        const achternaam = response.data.data[0].Achternaam;
-        res.json({ achternaam });
+        const data = await response.json();
+        res.json(data);
     } catch (error) {
-        console.error('Error fetching Achternaam:', error.message);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error('Error fetching Bedrijf:', error);
+        res.status(500).json({ error: 'Error fetching Bedrijf' });
     }
 });
 
-// Root route to serve a simple welcome message
-app.get('/', (req, res) => {
-    res.send('Welcome to the Zoho CRM interface app!');
-});
-
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server running at http://localhost:${port}`);
 });
