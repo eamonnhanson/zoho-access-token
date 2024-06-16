@@ -3,7 +3,6 @@ const axios = require('axios');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const { execSync } = require('child_process');
 const fs = require('fs');
 
 dotenv.config();
@@ -29,14 +28,21 @@ async function refreshAccessToken() {
             }
         });
 
-        const newAccessToken = response.data.access_token;
-        console.log('New access token:', newAccessToken);
+        if (response.data && response.data.access_token) {
+            const newAccessToken = response.data.access_token;
+            console.log('New access token:', newAccessToken);
 
-        // Update the environment variable on Heroku
-        execSync(`heroku config:set ZOHO_ACCESS_TOKEN=${newAccessToken} --app zoho-calls`);
-        console.log('Access token updated on Heroku.');
+            // Update the environment variable directly
+            process.env.ZOHO_ACCESS_TOKEN = newAccessToken;
 
-        return newAccessToken;
+            // Optionally write the new access token to the .env file for persistence
+            fs.writeFileSync('.env', `ZOHO_ACCESS_TOKEN=${newAccessToken}\nZOHO_REFRESH_TOKEN=${refreshToken}\nZOHO_CLIENT_ID=${clientId}\nZOHO_CLIENT_SECRET=${clientSecret}`);
+
+            return newAccessToken;
+        } else {
+            console.error('Error: No access token in response:', response.data);
+            throw new Error('No access token in response');
+        }
     } catch (error) {
         console.error('Error refreshing access token:', error.response ? error.response.data : error.message);
         throw new Error('Unable to refresh access token');
