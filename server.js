@@ -28,6 +28,8 @@ async function refreshAccessToken() {
             }
         });
 
+        console.log('Response from Zoho:', response.data);
+
         if (response.data && response.data.access_token) {
             const newAccessToken = response.data.access_token;
             console.log('New access token:', newAccessToken);
