@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const fs = require('fs');
+const { exec } = require('child_process');
 
 dotenv.config();
 
@@ -21,30 +22,31 @@ async function refreshAccessToken() {
 
     try {
         console.log('Attempting to refresh access token...');
-        console.log(`Refresh URL: ${refreshUrl}`);
         const response = await axios.post(refreshUrl, null, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
 
-        console.log('Response from Zoho:', response.data);
+        const newAccessToken = response.data.access_token;
+        console.log('New access token:', newAccessToken);
 
-        if (response.data && response.data.access_token) {
-            const newAccessToken = response.data.access_token;
-            console.log('New access token:', newAccessToken);
+        // Update the environment variable directly
+        process.env.ZOHO_ACCESS_TOKEN = newAccessToken;
 
-            // Update the environment variable directly
-            process.env.ZOHO_ACCESS_TOKEN = newAccessToken;
+        // Optionally write the new access token to the .env file for persistence
+        fs.writeFileSync('.env', `ZOHO_ACCESS_TOKEN=${newAccessToken}\nZOHO_REFRESH_TOKEN=${refreshToken}\nZOHO_CLIENT_ID=${clientId}\nZOHO_CLIENT_SECRET=${clientSecret}`);
 
-            // Optionally write the new access token to the .env file for persistence
-            fs.writeFileSync('.env', `ZOHO_ACCESS_TOKEN=${newAccessToken}\nZOHO_REFRESH_TOKEN=${refreshToken}\nZOHO_CLIENT_ID=${clientId}\nZOHO_CLIENT_SECRET=${clientSecret}`);
+        // Update the Heroku config with the new access token
+        exec(`heroku config:set ZOHO_ACCESS_TOKEN=${newAccessToken} --app zoho-calls`, (err, stdout, stderr) => {
+            if (err) {
+                console.error('Error updating Heroku config:', err);
+                return;
+            }
+            console.log('Heroku config updated:', stdout);
+        });
 
-            return newAccessToken;
-        } else {
-            console.error('Error: No access token in response:', response.data);
-            throw new Error('No access token in response');
-        }
+        return newAccessToken;
     } catch (error) {
         console.error('Error refreshing access token:', error.response ? error.response.data : error.message);
         throw new Error('Unable to refresh access token');
