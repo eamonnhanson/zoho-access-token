@@ -28,6 +28,7 @@ async function refreshAccessToken() {
         });
 
         const newAccessToken = response.data.access_token;
+        console.log('New access token:', newAccessToken);
         process.env.ZOHO_ACCESS_TOKEN = newAccessToken;
 
         // Optionally write the new access token to a file for persistence
@@ -35,7 +36,7 @@ async function refreshAccessToken() {
 
         return newAccessToken;
     } catch (error) {
-        console.error('Error refreshing access token:', error);
+        console.error('Error refreshing access token:', error.response ? error.response.data : error.message);
         throw new Error('Unable to refresh access token');
     }
 }
@@ -55,14 +56,15 @@ async function ensureValidToken(req, res, next) {
         console.log('Access token is valid.');
         next();
     } catch (error) {
-        console.error('Error verifying access token:', error);
+        console.error('Error verifying access token:', error.response ? error.response.data : error.message);
         if (error.response && error.response.status === 401) {
             try {
+                console.log('Refreshing access token...');
                 accessToken = await refreshAccessToken();
                 process.env.ZOHO_ACCESS_TOKEN = accessToken;
                 next();
             } catch (refreshError) {
-                console.error('Error refreshing access token:', refreshError);
+                console.error('Error refreshing access token:', refreshError.message);
                 res.status(500).json({ error: 'Error refreshing access token' });
             }
         } else {
@@ -84,6 +86,7 @@ app.post('/fetch-achternaam', ensureValidToken, async (req, res) => {
     const url = `https://www.zohoapis.eu/crm/v2/Example/search?criteria=${encodeURIComponent(criteria)}`;
 
     try {
+        console.log('Fetching data for email:', email);
         const response = await axios.get(url, {
             headers: {
                 'Authorization': `Zoho-oauthtoken ${accessToken}`,
@@ -92,9 +95,10 @@ app.post('/fetch-achternaam', ensureValidToken, async (req, res) => {
         });
 
         const data = response.data;
+        console.log('Data fetched successfully:', data);
         res.json(data);
     } catch (error) {
-        console.error('Error fetching Bedrijf:', error);
+        console.error('Error fetching Bedrijf:', error.response ? error.response.data : error.message);
         res.status(500).json({ error: 'Error fetching Bedrijf' });
     }
 });
