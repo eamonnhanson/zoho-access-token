@@ -47,13 +47,13 @@ async function ensureValidToken(req, res, next) {
 
     try {
         console.log('Verifying access token...');
-        await axios.get('https://www.zohoapis.eu/crm/v2/Example/search?criteria=test', {
+        const response = await axios.get('https://www.zohoapis.eu/crm/v2/Example/search?criteria=(Email:equals:test@example.com)', {
             headers: {
                 'Authorization': `Zoho-oauthtoken ${accessToken}`,
                 'Content-Type': 'application/json'
             }
         });
-        console.log('Access token is valid.');
+        console.log('Access token is valid. Response:', response.data);
         next();
     } catch (error) {
         console.error('Error verifying access token:', error.response ? error.response.data : error.message);
