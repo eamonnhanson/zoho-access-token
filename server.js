@@ -13,6 +13,16 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(cors()); // Enable CORS for all routes
 
+// Add this route in your server.js for testing
+app.get('/force-refresh-token', async (req, res) => {
+    try {
+        const newAccessToken = await refreshAccessToken();
+        res.json({ newAccessToken });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 // Route voor het refresh access token
 const { execSync } = require('child_process');
