@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const fs = require('fs');
-const { exec } = require('child_process');
 
 dotenv.config();
 
@@ -35,16 +34,23 @@ async function refreshAccessToken() {
         process.env.ZOHO_ACCESS_TOKEN = newAccessToken;
 
         // Optionally write the new access token to the .env file for persistence
-        fs.writeFileSync('.env', `ZOHO_ACCESS_TOKEN=${newAccessToken}\nZOHO_REFRESH_TOKEN=${refreshToken}\nZOHO_CLIENT_ID=${clientId}\nZOHO_CLIENT_SECRET=${clientSecret}`);
+        fs.writeFileSync('.env', `ZOHO_ACCESS_TOKEN=${newAccessToken}\nZOHO_REFRESH_TOKEN=${refreshToken}\nZOHO_CLIENT_ID=${clientId}\nZOHO_CLIENT_SECRET=${clientSecret}\nHEROKU_API_KEY=${process.env.HEROKU_API_KEY}`);
 
-        // Update the Heroku config with the new access token
-        exec(`heroku config:set ZOHO_ACCESS_TOKEN=${newAccessToken} --app zoho-calls`, (err, stdout, stderr) => {
-            if (err) {
-                console.error('Error updating Heroku config:', err);
-                return;
+        // Update the Heroku config with the new access token using Heroku API
+        const herokuApiKey = process.env.HEROKU_API_KEY;
+        const appName = 'zoho-calls'; // Your Heroku app name
+
+        await axios.patch(`https://api.heroku.com/apps/${appName}/config-vars`, {
+            ZOHO_ACCESS_TOKEN: newAccessToken
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${herokuApiKey}`,
+                'Accept': 'application/vnd.heroku+json; version=3'
             }
-            console.log('Heroku config updated:', stdout);
         });
+
+        console.log('Heroku config updated with new access token');
 
         return newAccessToken;
     } catch (error) {
