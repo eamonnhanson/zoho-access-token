@@ -3,6 +3,7 @@ const axios = require('axios');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const { execSync } = require('child_process');
 const fs = require('fs');
 
 dotenv.config();
@@ -13,20 +14,6 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(cors()); // Enable CORS for all routes
 
-// Add this route in your server.js for testing
-app.get('/force-refresh-token', async (req, res) => {
-    try {
-        const newAccessToken = await refreshAccessToken();
-        res.json({ newAccessToken });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-// Route voor het refresh access token
-const { execSync } = require('child_process');
-
 async function refreshAccessToken() {
     const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
     const clientId = process.env.ZOHO_CLIENT_ID;
@@ -34,6 +21,8 @@ async function refreshAccessToken() {
     const refreshUrl = `https://accounts.zoho.eu/oauth/v2/token?refresh_token=${refreshToken}&client_id=${clientId}&client_secret=${clientSecret}&grant_type=refresh_token`;
 
     try {
+        console.log('Attempting to refresh access token...');
+        console.log(`Refresh URL: ${refreshUrl}`);
         const response = await axios.post(refreshUrl, null, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -45,6 +34,7 @@ async function refreshAccessToken() {
 
         // Update the environment variable on Heroku
         execSync(`heroku config:set ZOHO_ACCESS_TOKEN=${newAccessToken} --app zoho-calls`);
+        console.log('Access token updated on Heroku.');
 
         return newAccessToken;
     } catch (error) {
@@ -53,9 +43,6 @@ async function refreshAccessToken() {
     }
 }
 
-
-
-// Middleware functie om de geldigheid van de access token te controleren en te vernieuwen indien nodig
 async function ensureValidToken(req, res, next) {
     let accessToken = process.env.ZOHO_ACCESS_TOKEN;
 
@@ -87,8 +74,6 @@ async function ensureValidToken(req, res, next) {
     }
 }
 
-
-// Route voor het ophalen van achternaam
 app.post('/fetch-achternaam', ensureValidToken, async (req, res) => {
     const email = req.body.email;
     const accessToken = process.env.ZOHO_ACCESS_TOKEN;
@@ -118,7 +103,16 @@ app.post('/fetch-achternaam', ensureValidToken, async (req, res) => {
     }
 });
 
-// Route voor health check
+// Route for forcing token refresh (for testing)
+app.get('/force-refresh-token', async (req, res) => {
+    try {
+        const newAccessToken = await refreshAccessToken();
+        res.json({ newAccessToken });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get('/', (req, res) => {
     res.send('Zoho CRM API integration is running');
 });
