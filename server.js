@@ -7,6 +7,10 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
+app.get('/', (req, res) => {
+    res.send('Welcome to the Zoho CRM integration server!');
+});
+
 app.post('/fetch-achternaam', async (req, res) => {
     try {
         const email = req.body['contact[email]'];
