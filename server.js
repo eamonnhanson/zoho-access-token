@@ -5,7 +5,6 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 async function refreshAccessToken() {
     const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
@@ -33,7 +32,7 @@ async function refreshAccessToken() {
     }
 }
 
-// Endpoint to fetch Zoho data
+// Endpoint om de toegangstoken op te halen en te verversen
 app.post('/fetch-achternaam', async (req, res) => {
     const email = req.body.email;
     const accessToken = await refreshAccessToken();
@@ -49,27 +48,6 @@ app.post('/fetch-achternaam', async (req, res) => {
     } catch (error) {
         console.error('Error fetching data from Zoho CRM:', error.response ? error.response.data : error.message);
         res.status(500).json({ error: 'Error fetching data from Zoho CRM' });
-    }
-});
-
-// Endpoint for form submission
-app.post('/submit-form', async (req, res) => {
-    const formData = req.body;
-
-    try {
-        // Replace this with the actual webhook URL
-        const webhookUrl = 'https://flow.zoho.eu/20071889412/flow/webhook/incoming?zapikey=YOUR_ZAPIKEY_HERE&isdebug=false';
-
-        const response = await axios.post(webhookUrl, formData, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        res.json({ message: 'Formulier succesvol verzonden', data: formData });
-    } catch (error) {
-        console.error('Error sending data to Zoho Creator:', error.response ? error.response.data : error.message);
-        res.status(500).json({ error: 'Error sending data to Zoho Creator' });
     }
 });
 
