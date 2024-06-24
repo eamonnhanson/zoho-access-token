@@ -6,6 +6,11 @@ const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
+// Serve the root path to avoid 404 errors
+app.get('/', (req, res) => {
+    res.send('Welcome to the Zoho CRM Data Fetcher');
+});
+
 async function refreshAccessToken() {
     const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
     const clientId = process.env.ZOHO_CLIENT_ID;
@@ -32,7 +37,7 @@ async function refreshAccessToken() {
     }
 }
 
-// Endpoint om de toegangstoken op te halen en te verversen
+// Endpoint to fetch data based on email
 app.post('/fetch-achternaam', async (req, res) => {
     const email = req.body.email;
     const accessToken = await refreshAccessToken();
@@ -52,5 +57,5 @@ app.post('/fetch-achternaam', async (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server draait op http://localhost:${port}`);
+    console.log(`Server running on http://localhost:${port}`);
 });
