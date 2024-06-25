@@ -8,12 +8,14 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Remove or comment out the require statement if it's not needed
-// const testZohoAccess = require('./test-zohoaccess');
-
 app.post('/fetch-achternaam', async (req, res) => {
     const email = req.body['contact[email]'];
     console.log(`Fetching data for email: ${email}`);
+    
+    if (!email) {
+        res.status(400).json({ message: 'Email is required' });
+        return;
+    }
 
     try {
         const response = await axios.get(`https://www.zohoapis.eu/crm/v2/Leads/search?email=${email}`, {
@@ -31,7 +33,7 @@ app.post('/fetch-achternaam', async (req, res) => {
         }
     } catch (error) {
         console.error('Error fetching data from Zoho CRM:', error.message, error.response ? error.response.data : '');
-        
+
         if (error.response && error.response.data && error.response.data.code === 'INVALID_TOKEN') {
             res.status(401).json({ message: 'Invalid OAuth token' });
         } else if (error.response && error.response.data) {
