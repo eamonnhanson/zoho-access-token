@@ -21,14 +21,16 @@ app.post('/fetch-achternaam', async (req, res) => {
             }
         });
 
-        if (response.data.data.length > 0) {
+        if (response.data && response.data.data && response.data.data.length > 0) {
             res.json(response.data);
-        } else {
+        } else if (response.data && response.data.data) {
             res.status(404).json({ message: 'No matching records found' });
+        } else {
+            res.status(500).json({ message: 'Unexpected response format', data: response.data });
         }
     } catch (error) {
         console.error('Error fetching data from Zoho CRM:', error.response ? error.response.data : error.message);
-        res.status(500).json({ message: 'An error occurred while fetching data' });
+        res.status(500).json({ message: 'An error occurred while fetching data', error: error.response ? error.response.data : error.message });
     }
 });
 
@@ -42,7 +44,4 @@ app.post('/submit-form', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 
