@@ -1,54 +1,61 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const cors = require('cors');
-
 const app = express();
+const port = process.env.PORT || 3000;
 
-app.use(cors());
 app.use(bodyParser.json());
 
-app.post('/fetch-achternaam', async (req, res) => {
-    const email = req.body['contact[email]'];
-    console.log(`Fetching data for email: ${email}`);
-    
-    if (!email) {
-        res.status(400).json({ message: 'Email is required' });
-        return;
-    }
+// Serve the root path to avoid 404 errors
+app.get('/', (req, res) => {
+    res.send('Welcome to the Zoho CRM Data Fetcher');
+});
+
+async function refreshAccessToken() {
+    const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
+    const clientId = process.env.ZOHO_CLIENT_ID;
+    const clientSecret = process.env.ZOHO_CLIENT_SECRET;
+    const refreshUrl = `https://accounts.zoho.eu/oauth/v2/token?refresh_token=${refreshToken}&client_id=${clientId}&client_secret=${clientSecret}&grant_type=refresh_token`;
 
     try {
-        const response = await axios.get(`https://www.zohoapis.eu/crm/v2/Leads/search?email=${email}`, {
+        const response = await axios.post(refreshUrl, null, {
             headers: {
-                'Authorization': `Zoho-oauthtoken ${process.env.ZOHO_ACCESS_TOKEN}`
+                'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
 
-        console.log('Data fetched from Zoho CRM:', response.data);
+        const newAccessToken = response.data.access_token;
+        console.log('New access token:', newAccessToken);
 
-        if (response.data && response.data.data && response.data.data.length > 0) {
-            res.json(response.data);
-        } else {
-            res.status(404).json({ message: 'No matching records found' });
-        }
+        // Update the environment variable
+        process.env.ZOHO_ACCESS_TOKEN = newAccessToken;
+
+        return newAccessToken;
     } catch (error) {
-        console.error('Error fetching data from Zoho CRM:', error.message, error.response ? error.response.data : '');
+        console.error('Error refreshing access token:', error.response ? error.response.data : error.message);
+        throw new Error('Unable to refresh access token');
+    }
+}
 
-        if (error.response && error.response.data && error.response.data.code === 'INVALID_TOKEN') {
-            res.status(401).json({ message: 'Invalid OAuth token' });
-        } else if (error.response && error.response.data) {
-            res.status(500).json({ message: error.response.data.message });
-        } else {
-            res.status(500).json({ message: 'Error fetching data from Zoho CRM' });
-        }
+// Endpoint to fetch data based on email
+app.post('/fetch-achternaam', async (req, res) => {
+    const email = req.body.email;
+    const accessToken = await refreshAccessToken();
+
+    try {
+        const response = await axios.get(`https://www.zohoapis.eu/crm/v2/Example/search?criteria=(Email:equals:${email})`, {
+            headers: {
+                'Authorization': `Zoho-oauthtoken ${accessToken}`
+            }
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error fetching data from Zoho CRM:', error.response ? error.response.data : error.message);
+        res.status(500).json({ error: 'Error fetching data from Zoho CRM' });
     }
 });
 
-app.get('/', (req, res) => {
-    res.send('Zoho Access Token API is running');
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
 });
