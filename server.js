@@ -1,49 +1,46 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const axios = require('axios');
-const dotenv = require('dotenv');
-const { refreshAccessToken } = require('./test-zohoaccess');
-
-dotenv.config();
+const cors = require('cors');
+// const testZohoAccess = require('./test-zohoaccess'); // Comment out or remove this line
 
 const app = express();
-const port = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(cors());
+app.use(bodyParser.json());
 
-app.post('/verify-email', async (req, res) => {
-    const { email } = req.body;
+app.post('/fetch-achternaam', async (req, res) => {
+    const email = req.body['contact[email]'];
+    console.log(`Fetching data for email: ${email}`);
+
     try {
-        await refreshAccessToken();
-        const accessToken = process.env.ZOHO_ACCESS_TOKEN;
-        const response = await axios.get(`https://www.zohoapis.eu/crm/v2/Example/search?criteria=(Email:equals:${email})`, {
+        const response = await axios.get(`https://www.zohoapis.eu/crm/v2/Leads/search?email=${email}`, {
             headers: {
-                'Authorization': `Zoho-oauthtoken ${accessToken}`
+                'Authorization': `Zoho-oauthtoken ${process.env.ZOHO_ACCESS_TOKEN}`
             }
         });
 
-        if (response.data.data.length > 0) {
-            const user = response.data.data[0];
-            if (user.Teller < 6) {
-                res.json({
-                    exists: true,
-                    voornaam: user.Voornaam,
-                    achternaam: user.Achternaam,
-                    email: user.Email,
-                    teller: user.Teller,
-                    bedrijf: user.Bedrijf
-                });
-            } else {
-                res.json({ exists: false });
-            }
+        console.log('Data fetched from Zoho CRM:', response.data);
+
+        if (response.data && response.data.data && response.data.data.length > 0) {
+            res.json(response.data);
         } else {
-            res.json({ exists: false });
+            res.status(404).json({ message: 'No matching records found' });
         }
     } catch (error) {
-        console.error('Error verifying email:', error.response ? error.response.data : error.message);
-        res.status(500).json({ error: 'Error verifying email' });
+        console.error('Error fetching data from Zoho CRM:', error.message, error.response ? error.response.data : '');
+        
+        if (error.response && error.response.data && error.response.data.code === 'INVALID_TOKEN') {
+            res.status(401).json({ message: 'Invalid OAuth token' });
+        } else if (error.response && error.response.data) {
+            res.status(500).json({ message: error.response.data.message });
+        } else {
+            res.status(500).json({ message: 'Error fetching data from Zoho CRM' });
+        }
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
