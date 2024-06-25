@@ -19,10 +19,20 @@ app.post('/fetch-achternaam', async (req, res) => {
         });
 
         console.log('Data fetched from Zoho CRM:', response.data);
-        res.json(response.data);
+
+        // Check if response.data exists and has the expected structure
+        if (response.data && response.data.data && response.data.data.length > 0) {
+            res.json(response.data);
+        } else {
+            res.status(404).json({ message: 'No matching records found' });
+        }
     } catch (error) {
         console.error('Error fetching data from Zoho CRM:', error.message, error.response ? error.response.data : '');
-        if (error.response && error.response.data) {
+        
+        // Check if the error is due to an invalid token
+        if (error.response && error.response.data && error.response.data.code === 'INVALID_TOKEN') {
+            res.status(401).json({ message: 'Invalid OAuth token' });
+        } else if (error.response && error.response.data) {
             res.status(500).json({ message: error.response.data.message });
         } else {
             res.status(500).json({ message: 'Error fetching data from Zoho CRM' });
