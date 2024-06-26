@@ -60,6 +60,13 @@ app.post('/fetch-achternaam', async (req, res) => {
     }
 });
 
+// Example route to handle the form submission
+app.post('/submit-form', (req, res) => {
+    const formData = req.body;
+    // Handle the form data here, e.g., save to database, send email, etc.
+    res.status(200).json({ message: 'Form submitted successfully' });
+});
+
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
