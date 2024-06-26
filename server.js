@@ -9,6 +9,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true })); // Support form-encoded bodies
 
 // Serve the root path to avoid 404 errors
 app.get('/', (req, res) => {
