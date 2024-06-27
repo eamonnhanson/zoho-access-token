@@ -6,10 +6,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Enable CORS for all routes
-app.use(cors());
+app.use(cors({
+    origin: 'https://www.planteenboom.nu' // Add your domain here
+}));
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true })); // Support form-encoded bodies
 
 // Serve the root path to avoid 404 errors
 app.get('/', (req, res) => {
@@ -59,13 +60,6 @@ app.post('/fetch-achternaam', async (req, res) => {
         console.error('Error fetching data from Zoho CRM:', error.response ? error.response.data : error.message);
         res.status(500).json({ error: 'Error fetching data from Zoho CRM' });
     }
-});
-
-// Example route to handle the form submission
-app.post('/submit-form', (req, res) => {
-    const formData = req.body;
-    // Handle the form data here, e.g., save to database, send email, etc.
-    res.status(200).json({ message: 'Form submitted successfully' });
 });
 
 app.listen(port, () => {
