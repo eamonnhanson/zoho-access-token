@@ -6,9 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Enable CORS for all routes
-app.use(cors({
-    origin: 'https://www.planteenboom.nu' // Add your domain here
-}));
+app.use(cors());
 
 app.use(bodyParser.json());
 
