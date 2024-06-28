@@ -6,16 +6,10 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Enable CORS for all routes
-app.use(cors({
-    origin: 'https://www.planteenboom.nu', // Allow only this origin
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204
-}));
+app.use(cors());
 
 app.use(bodyParser.json());
 
-// Serve the root path to avoid 404 errors
 app.get('/', (req, res) => {
     res.send('Welcome to the Zoho CRM Data Fetcher');
 });
@@ -65,23 +59,23 @@ app.post('/fetch-achternaam', async (req, res) => {
     }
 });
 
-// Endpoint to handle the Zoho Creator webhook
+// Endpoint to handle webhook requests
 app.post('/zoho-webhook', async (req, res) => {
+    const payload = req.body;
+
     try {
-        const response = await axios.post('https://flow.zoho.eu/20071889412/flow/webhook/incoming', req.body, {
+        const response = await axios.post('https://flow.zoho.eu/20071889412/flow/webhook/incoming?zapikey=1001.135d0547db270fb2604b6772f9c30ac1.e1c3971a221b2993f3d850b4b348471a&isdebug=false', payload, {
             headers: {
-                'Content-Type': 'application/json',
-                'zapikey': process.env.ZOHO_API_KEY // Ensure the API key is set in your environment variables
+                'Content-Type': 'application/json'
             }
         });
 
         res.json(response.data);
     } catch (error) {
         console.error('Error sending data to Zoho Creator:', error.response ? error.response.data : error.message);
+        console.error('Response data:', error.response ? error.response.data : 'No response data');
+        console.error('Response status:', error.response ? error.response.status : 'No response status');
+        console.error('Payload:', JSON.stringify(payload, null, 2));
         res.status(500).json({ error: 'Error sending data to Zoho Creator' });
     }
-});
-
-app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
 });
