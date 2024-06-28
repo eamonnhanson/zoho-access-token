@@ -5,9 +5,13 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Enable CORS for all routes
-app.use(cors());
+// Enable CORS for specific origin
+const corsOptions = {
+    origin: 'https://www.planteenboom.nu',
+    optionsSuccessStatus: 200
+};
 
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
@@ -73,9 +77,10 @@ app.post('/zoho-webhook', async (req, res) => {
         res.json(response.data);
     } catch (error) {
         console.error('Error sending data to Zoho Creator:', error.response ? error.response.data : error.message);
-        console.error('Response data:', error.response ? error.response.data : 'No response data');
-        console.error('Response status:', error.response ? error.response.status : 'No response status');
-        console.error('Payload:', JSON.stringify(payload, null, 2));
         res.status(500).json({ error: 'Error sending data to Zoho Creator' });
     }
+});
+
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
 });
