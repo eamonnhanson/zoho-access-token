@@ -6,12 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Enable CORS for all routes
-app.use(cors({
-    origin: '*', // Allow all origins, or specify your domain
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    preflightContinue: false,
-    optionsSuccessStatus: 204
-}));
+app.use(cors());
 
 app.use(bodyParser.json());
 
@@ -62,6 +57,23 @@ app.post('/fetch-achternaam', async (req, res) => {
     } catch (error) {
         console.error('Error fetching data from Zoho CRM:', error.response ? error.response.data : error.message);
         res.status(500).json({ error: 'Error fetching data from Zoho CRM' });
+    }
+});
+
+// Endpoint to handle Zoho Creator webhook
+app.post('/zoho-webhook', async (req, res) => {
+    try {
+        const response = await axios.post('https://flow.zoho.eu/20071889412/flow/webhook/incoming', req.body, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.ZOHO_ACCESS_TOKEN}`
+            }
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error sending data to Zoho Creator:', error.response ? error.response.data : error.message);
+        res.status(500).json({ error: 'Error sending data to Zoho Creator' });
     }
 });
 
