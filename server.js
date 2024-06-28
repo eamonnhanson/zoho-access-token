@@ -44,7 +44,7 @@ async function refreshAccessToken() {
     }
 }
 
-// Endpoint to fetch data based on email
+// Endpoint to fetch data based on email 28 june
 app.post('/fetch-achternaam', async (req, res) => {
     const email = req.body.email;
     const accessToken = await refreshAccessToken();
